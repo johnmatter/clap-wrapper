@@ -54,8 +54,13 @@ set(CLAP_WRAPPER_VERSION "${PROJECT_VERSION}" CACHE STRING "Version of the wrapp
 message(STATUS "clap-wrapper: CLAP_WRAPPER_VERSION is ${CLAP_WRAPPER_VERSION}")
 
 if (APPLE)
-	enable_language(OBJC)
-	enable_language(OBJCXX)
+	# Only enable languages if they haven't been enabled yet
+	if(NOT DEFINED CMAKE_OBJC_COMPILER)
+		enable_language(OBJC)
+	endif()
+	if(NOT DEFINED CMAKE_OBJCXX_COMPILER)
+		enable_language(OBJCXX)
+	endif()
 endif()
 
 if (PROJECT_IS_TOP_LEVEL)
