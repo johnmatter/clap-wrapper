@@ -139,7 +139,15 @@ void CLAP_WRAPPER_TIMER_CALLBACK(CFRunLoopTimerRef timer, void *info)
   CFAbsoluteTime FireTime = CFAbsoluteTimeGetCurrent() + TIMER_INTERVAL;
   idleTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, FireTime, TIMER_INTERVAL, 0, 0,
                                    CLAP_WRAPPER_TIMER_CALLBACK, &TimerContext);
-  if (idleTimer) CFRunLoopAddTimer(CFRunLoopGetMain(), idleTimer, kCFRunLoopCommonModes);
+  if (idleTimer) 
+  {
+    CFRunLoopAddTimer(CFRunLoopGetMain(), idleTimer, kCFRunLoopCommonModes);
+    LOGINFO("[clap-wrapper] Created idle timer with {}ms interval", (int)(TIMER_INTERVAL * 1000));
+  }
+  else
+  {
+    LOGINFO("[clap-wrapper] Failed to create idle timer!");
+  }
 
   return self;
 }
@@ -147,6 +155,9 @@ void CLAP_WRAPPER_TIMER_CALLBACK(CFRunLoopTimerRef timer, void *info)
 - (void)doIdle
 {
   // auto gui = ui._plugin->_ext._gui;
+  LOGINFO("[clap-wrapper] doIdle called - canary: {}, plugin: {}, gui: {}", 
+          canary, (ui._plugin ? "yes" : "no"), 
+          (ui._plugin && ui._plugin->_ext._gui ? "yes" : "no"));
 }
 - (void)viewDidMoveToWindow
 {
@@ -164,6 +175,15 @@ void CLAP_WRAPPER_TIMER_CALLBACK(CFRunLoopTimerRef timer, void *info)
 
       assert(canary == 0);
     }
+  }
+  else
+  {
+    LOGINFO("[clap-wrapper] - view moved to window: {}", (void*)[self window]);
+    // Add system logging to see if there are macOS-specific issues
+    NSLog(@"[clap-wrapper] NSView moved to window: %@", [self window]);
+    NSLog(@"[clap-wrapper] NSView frame: %@", NSStringFromRect([self frame]));
+    NSLog(@"[clap-wrapper] NSView bounds: %@", NSStringFromRect([self bounds]));
+    NSLog(@"[clap-wrapper] NSView superview: %@", [self superview]);
   }
   [super viewDidMoveToWindow];
 }
@@ -184,6 +204,7 @@ void CLAP_WRAPPER_TIMER_CALLBACK(CFRunLoopTimerRef timer, void *info)
 }
 - (void)setFrame:(NSRect)newSize
 {
+  NSLog(@"[clap-wrapper] NSView setFrame called with rect: %@", NSStringFromRect(newSize));
   [super setFrame:newSize];
   if (canary)
   {
@@ -192,6 +213,12 @@ void CLAP_WRAPPER_TIMER_CALLBACK(CFRunLoopTimerRef timer, void *info)
     gui->set_size(ui._plugin->_plugin, newSize.size.width, newSize.size.height);
   }
   // gui->show(ui._plugin->_plugin);
+}
+
+- (void)drawRect:(NSRect)dirtyRect
+{
+  NSLog(@"[clap-wrapper] NSView drawRect called with rect: %@", NSStringFromRect(dirtyRect));
+  [super drawRect:dirtyRect];
 }
 
 @end

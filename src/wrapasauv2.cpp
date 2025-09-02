@@ -698,11 +698,14 @@ OSStatus WrapAsAUV2::GetProperty(AudioUnitPropertyID inID, AudioUnitScope inScop
         };
         _uiconn._createWindow = [this]
         {
+          LOGINFO("[clap-wrapper] Creating GUI window");
           this->_uiIsOpened = true;
           _plugin->_ext._gui->create(_plugin->_plugin, CLAP_WINDOW_API_COCOA, false);
+          LOGINFO("[clap-wrapper] GUI window creation completed");
         };
         _uiconn._destroyWindow = [this]
         {
+          LOGINFO("[clap-wrapper] Destroying GUI window");
           // this must exist
           _plugin->_ext._gui->destroy(_plugin->_plugin);
 
@@ -711,6 +714,7 @@ OSStatus WrapAsAUV2::GetProperty(AudioUnitPropertyID inID, AudioUnitScope inScop
           {
             *(this->_uiconn._canary) = 0;
           }
+          LOGINFO("[clap-wrapper] GUI window destruction completed");
         };
         *static_cast<ui_connection*>(outData) = _uiconn;
         return noErr;
