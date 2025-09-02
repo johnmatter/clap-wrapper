@@ -411,10 +411,45 @@ class WrapAsAUV2 : public ausdk::AUBase,
 
   bool register_timer(uint32_t period_ms, clap_id* timer_id) override
   {
-    return false;
+    // restrict the timer to 30ms minimum
+    if (period_ms < 30)
+    {
+      period_ms = 30;
+    }
+
+    auto l = _timersObjects.size();
+    for (decltype(l) i = 0; i < l; ++i)
+    {
+      auto& to = _timersObjects[i];
+      if (to.period == 0)
+      {
+        // reuse timer object
+        to.timer_id = static_cast<clap_id>(i + 1000);
+        to.period = period_ms;
+        to.next_tick = os::getTickInMS() + period_ms;
+        *timer_id = to.timer_id;
+        return true;
+      }
+    }
+    // create a new timer object
+    auto newid = (clap_id)(l + 1000);
+    TimerObject f{newid, period_ms, os::getTickInMS() + period_ms};
+    *timer_id = newid;
+    _timersObjects.push_back(f);
+    return true;
   }
+  
   bool unregister_timer(clap_id timer_id) override
   {
+    for (auto& to : _timersObjects)
+    {
+      if (to.timer_id == timer_id)
+      {
+        to.period = 0;
+        to.next_tick = 0;
+        return true;
+      }
+    }
     return false;
   }
 
@@ -556,6 +591,16 @@ class WrapAsAUV2 : public ausdk::AUBase,
 
   // the queue from audiothread to UI thread
   ClapWrapper::detail::shared::fixedqueue<queueEvent, 8192> _queueToUI;
+
+  // timer support for CLAP plugins
+  struct TimerObject
+  {
+    clap_id timer_id = 0;
+    uint32_t period = 0;
+    uint64_t next_tick = 0;
+  };
+  std::vector<TimerObject> _timersObjects;
+  std::atomic<bool> _timersStarted{false};
 
   std::vector<std::unique_ptr<MIDIOutput>> _midi_outports;
 };

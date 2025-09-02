@@ -1131,6 +1131,20 @@ void WrapAsAUV2::onIdle()
       _plugin->_plugin->on_main_thread(_plugin->_plugin);
     }
   }
+
+  // Process CLAP timers
+  if (_plugin && _plugin->_ext._timer)
+  {
+    auto now = os::getTickInMS();
+    for (auto& to : _timersObjects)
+    {
+      if (to.period > 0 && to.next_tick < now)
+      {
+        to.next_tick = now + to.period;
+        _plugin->_ext._timer->on_timer(_plugin->_plugin, to.timer_id);
+      }
+    }
+  }
 }
 
 OSStatus WrapAsAUV2::SaveState(CFPropertyListRef* ptPList)
